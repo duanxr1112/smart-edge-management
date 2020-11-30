@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "btit.push-url",
+      "type": "java.lang.String",
+      "description": "Description for btit.push-url."
+    }
+  ]
+}

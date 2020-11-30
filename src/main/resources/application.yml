@@ -1,0 +1,93 @@
+server:
+  port: 8081
+  tomcat:
+    accept-count: 1000 
+    max-threads: 1000
+    max-connections: 2000
+    connector:
+      maxHttpHeaderSize: 10240000   #设定HttpHeader请求头大小
+      maxHttpPostSize: 10240000   #设定Httppost数据大小
+spring:
+  application:
+    name: store
+    #Mysql数据源
+  datasource:
+    #url: jdbc:mysql://10.110.156.156:30110/test_smart_edge?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=false
+    url: jdbc:mysql://10.110.156.156:30111/digital_store_operation?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=false
+    username: root
+    password: l1_Admin
+    driver-class-name: org.mariadb.jdbc.Driver
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 1024MB
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+      resolve-lazily: false
+  redis:
+      host: 10.110.156.156
+      port: 30113
+      password: l1_Admin
+      jedis:
+        pool:
+          max-active: 8
+          max-wait: 8
+          min-idle: 2
+          max-idle: 1
+      timeout:  3000
+      database: 2
+http: 
+   #最大连接数
+   max_total: 5000
+   #并发数
+   default_max_perRoute: 200 
+   #Validate connections after 1 sec of inactivity
+   validate_after_inactivity: 5000
+   #创建连接的最长时间
+   connection_request_timeout: 30000
+   #数据传输的最长时间
+   connection_timeout: 30000
+   #数据传输的最长时间
+   socket_timeout: 45000
+   idleConnection_evictor_waitTime: 30  
+
+mybatis:
+    type-aliases-package: com.lenovo.ailab.smartStore.dao.po
+    mapper-locations: classpath:mapping/*.xml
+      
+pagehelper:
+    helperDialect: mysql
+    reasonable: true
+    supportMethodsArguments: true
+    params: count=countSql
+
+filepath:
+    software: D:\code\git\solution\smart-edge-management\src\main\resources\files\
+    department: D:\code\git\solution\smart-edge-management\src\main\resources\departments\
+    system: D:\code\git\solution\smart-edge-management\src\main\resources\system\
+    edge-device: D:\code\git\solution\smart-edge-management\src\main\resources\edge-device\
+    video: D:\tools\
+file:
+  server-url: http://10.110.156.156:30344/
+  down-url: https://dev-api.brain.lenovo.com/file/static/
+  lenovo-token: 723f510b73e44695b03acbbb98f59a08
+
+face:
+  server-url: http://10.110.156.156:31538
+
+##logging:
+  ##level:
+    ##com.demo.api: DEBUG
+    ##com.lenovo.ailab.smartedge.dao: DEBUG
+video:
+  upload:
+    url: http://127.0.0.1:8080/video/upload/
+token:
+  url: https://dev-api.brain.lenovo.com/auth/lenovoid-jwttoken?lenovoid.wust=
+  check-jwt-token: http://10.110.156.156:31519/check-jwt-token
+
+controlServer:
+   #url: http://47.105.193.55:8080/api/aimigos/
+   url: http://k8s-remora.remora:8088/
+#   updateConfig: http://10.110.156.156:31098
+   caremaVideoStream: https://tw-sds.brain.lenovo.com/store/digital

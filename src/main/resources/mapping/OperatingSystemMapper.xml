@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lenovo.ailab.smartedge.dao.OperatingSystemMapper" >
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.OperatingSystem" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="os_code" property="osCode" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="VARCHAR" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="version" property="version" jdbcType="VARCHAR" />
+    <result column="file_path" property="filePath" jdbcType="VARCHAR" />
+    <result column="file_name" property="fileName" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="del_flag" property="delFlag" jdbcType="BIT" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="parameter" property="parameter" jdbcType="VARCHAR" />
+  </resultMap>
+  <!--删除操作系统-->
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    UPDATE operating_system SET del_flag=1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </delete>
+  <!--新增操作系统-->
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.OperatingSystem" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO operating_system (id, os_code, type, name, version, file_path, file_name,description,parameter,json_config)
+    VALUES (#{id,jdbcType=INTEGER}, #{osCode,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR},#{name,jdbcType=VARCHAR},#{version,jdbcType=VARCHAR},
+     #{filePath,jdbcType=VARCHAR},#{fileName,jdbcType=VARCHAR},#{description,jdbcType=VARCHAR},#{parameter,jdbcType=VARCHAR},#{jsonConfig,jdbcType=VARCHAR})
+  </insert>
+  <!--升级操作系统-->
+  <update id="insertversion">
+    UPDATE operating_system SET version=#{version,jdbcType=VARCHAR},file_name=#{fileName,jdbcType=VARCHAR},
+    file_path=#{filePath,jdbcType=VARCHAR},create_time=NOW()
+    WHERE id=#{id,jdbcType=INTEGER}
+  </update>
+  <!--修改操作系统-->
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.OperatingSystem" >
+    UPDATE operating_system
+    SET os_code = #{osCode,jdbcType=VARCHAR},
+    TYPE = #{type,jdbcType=VARCHAR},
+    NAME = #{name,jdbcType=VARCHAR},
+    version = #{version,jdbcType=VARCHAR},
+    file_path = #{filePath,jdbcType=VARCHAR},
+    description = #{description,jdbcType=VARCHAR},
+    parameter = #{parameter,jdbcType=VARCHAR},
+    json_config = #{jsonConfig,jdbcType=VARCHAR},
+    create_time = NOW()
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap"  >
+    SELECT id, os_code, type, name, version, file_path, create_time, file_name,del_flag,description,parameter
+    FROM operating_system
+    WHERE id = #{id,jdbcType=INTEGER} AND del_flag=0
+  </select>
+  <!--根据osCodes 查询-->
+  <select id="selectAllByOsCodes" parameterType="java.lang.Integer" resultMap="BaseResultMap"  >
+    SELECT id, os_code, type, name, version, file_path, create_time, file_name,del_flag,description,parameter
+    FROM operating_system
+    WHERE os_code in
+    <foreach collection="osCodes" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=VARCHAR}
+    </foreach>
+    AND del_flag=0
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    SELECT o.id, o.os_code, o.type, o.name, o.version, o.file_path, o.create_time, o.del_flag, o.file_name,o.description,o.parameter
+    FROM operating_system o
+    WHERE o.del_flag = 0
+    <if test="null != name and '' != name">
+      AND o.name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="null != osCode and '' != osCode">
+      AND o.os_code LIKE concat('%',#{osCode},'%')
+    </if>
+    ORDER BY o.create_time DESC
+  </select>
+
+  <!--查询文件名字-->
+  <select id="selectFilePath" resultMap="BaseResultMap">
+     SELECT id,file_name,file_path,version
+     FROM <if test="type != '' and type !=null"> ${type} </if>
+     WHERE file_path=#{path}
+  </select>
+
+  <!--操作系统下拉菜单-->
+  <select id="selectNoPageOSystem" resultMap="BaseResultMap">
+     SELECT id, os_code, type, name, version, file_path, file_name,description,parameter
+     FROM operating_system
+     WHERE del_flag=0
+  </select>
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.DepartmentDeviceTopologyMapper">
+	<resultMap id="BaseResultMap"
+		type="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceTopology">
+		<id column="id" jdbcType="INTEGER" property="id" />
+		<result column="d_id" jdbcType="INTEGER" property="dId" />
+		<result column="data" jdbcType="VARCHAR" property="data" />
+		<result column="from_device_id" jdbcType="INTEGER" property="fromDeviceId" />
+		<result column="to_device_id" jdbcType="INTEGER" property="toDeviceId" />
+		<result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+		<result column="del_flag" jdbcType="BIT" property="delFlag" />
+	</resultMap>
+	<update id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		UPDATE department_device_topology
+		SET del_flag = 1
+		WHERE d_id = #{id,jdbcType=INTEGER}
+	</update>
+	<insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceTopologyParam">
+		insert into department_device_topology (d_id, from_device_id, to_device_id,create_time,del_flag,data)
+		values (#{dId,jdbcType=INTEGER},#{fromDeviceId,jdbcType=INTEGER}, #{toDeviceId,jdbcType=INTEGER},NOW(),0,#{data,jdbcType=VARCHAR})
+	</insert>
+	<!--新增集合-->
+	<insert id="insertDepartmentDeviceTopologyList" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceTopologyParam">
+		insert into department_device_topology (d_id, from_device_id, to_device_id,create_time,del_flag,data)
+		values
+		<foreach collection="list" item="item" index="index" separator=",">
+		(#{item.dId,jdbcType=INTEGER},#{item.fromDeviceId,jdbcType=INTEGER},#{item.toDeviceId,jdbcType=INTEGER},NOW(),0,#{item.data,jdbcType=VARCHAR})
+		</foreach>
+	</insert>
+	<update id="updateByPrimaryKey"
+		parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceTopology">
+		update department_device_topology
+		set d_id = #{dId,jdbcType=INTEGER},
+		from_device_id = #{fromDeviceId,jdbcType=INTEGER},
+		to_device_id = #{toDeviceId,jdbcType=INTEGER}
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+	<select id="selectByPrimaryKey" parameterType="java.lang.Integer"
+		resultMap="BaseResultMap">
+		select id, d_id,from_device_id, to_device_id, create_time
+		from department_device_topology
+		where d_id = #{id,jdbcType=INTEGER} and del_flag=0
+	</select>
+	<select id="selectAll" resultMap="BaseResultMap">
+		select id, d_id, from_device_id, to_device_id, create_time
+		from department_device_topology where del_flag=0
+	</select>
+	<select id="selectTopologyByDepartmentId" parameterType="java.lang.Integer"
+		resultMap="BaseResultMap">
+		SELECT data
+		FROM department_device_topology
+		WHERE d_id = #{departmentId,jdbcType=INTEGER} AND del_flag=0 GROUP BY d_id
+	</select>
+	<select id="selectTopologyByDepartmentIds" parameterType="java.lang.Integer"
+			resultMap="BaseResultMap">
+		SELECT data,d_id
+		FROM department_device_topology
+		WHERE d_id in
+		<foreach collection="dIds" item = "item" index="index" open="(" close=")" separator=",">
+			#{item,jdbcType=INTEGER}
+		</foreach>
+		AND del_flag=0 GROUP BY d_id
+	</select>
+    <!--根据门店id查找拓扑图详情-->
+	<select id="selectTopologyBydId" parameterType="java.lang.Integer"
+			resultMap="BaseResultMap">
+	    SELECT id, d_id, from_device_id, to_device_id, create_time
+		FROM department_device_topology
+		WHERE d_id = #{departmentId,jdbcType=INTEGER} AND del_flag=0
+	</select>
+	<!-- 保存节点数据-->
+	<insert id="insertNodeData" parameterType="com.lenovo.ailab.smartedge.dao.po.NodeData" useGeneratedKeys="true"  keyProperty="id">
+        INSERT INTO node_data(name,category,n_id,d_id,idx,type,kye,code,loc,textimg,create_time,del_flag)
+        VALUES(#{name,jdbcType=VARCHAR},#{category,jdbcType=VARCHAR},#{nId,jdbcType=VARCHAR},#{dId,jdbcType=VARCHAR},
+        #{idx,jdbcType=VARCHAR},#{type,jdbcType=VARCHAR},#{kye,jdbcType=INTEGER},#{code,jdbcType=VARCHAR},#{loc,jdbcType=VARCHAR},#{textimg,jdbcType=VARCHAR},NOW(),0)
+	</insert>
+	<!--保存节点数据-->
+	<insert id="insertParam" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceTopologyParam" useGeneratedKeys="true"  keyProperty="id">
+        INSERT INTO node_link(d_id,link_from_port_id_property,link_to_port_id_property,del_flag,create_time)
+        VALUES(#{dId,jdbcType=INTEGER},#{linkFromPortIdProperty,jdbcType=VARCHAR},#{linkToPortIdProperty,jdbcType=VARCHAR},0,NOW())
+	</insert>
+	<!--回显节点数据-->
+	<select id="selectAllTopology" resultType="com.lenovo.ailab.smartedge.dao.po.NodeData">
+		SELECT d.name,d.category,d.n_id AS nId,d.d_id,d.idx,d.type,d.kye,d.code,d.loc,d.textimg,l.link_from_port_id_property AS linkFromPortIdProperty,l.link_to_port_id_property AS linkToPortIdProperty
+		FROM node_data d
+		INNER JOIN node_link l ON d.d_id = l.d_id
+		WHERE d.d_id = #{dId,jdbcType=INTEGER} AND d.del_flag=0 GROUP BY d.kye
+	</select>
+	<!--删除节点数据-->
+	<update id="deleteNodeByPrimaryKey">
+        UPDATE node_data
+        SET del_flag = 1
+		WHERE d_id = #{dId,jdbcType=INTEGER}
+	</update>
+	<!--删除节点数据-->
+	<update id="deleteLinkByPrimaryKey">
+        UPDATE node_link
+        SET del_flag = 1
+		WHERE d_id = #{dId,jdbcType=INTEGER}
+	</update>
+	<!--查询是否被拖拽-->
+	<select id="selectDepartmentDeviceTopology" resultMap="BaseResultMap">
+		SELECT id, d_id, from_device_id, to_device_id, create_time,data
+		FROM department_device_topology
+		WHERE d_id = #{dId,jdbcType=INTEGER}
+		AND del_flag=0
+	</select>
+	<!--根据设备id及门店id 查询设备下关联摄像头-->
+	<select id="selectTopologyByDepartmentIdAndDeviceId" resultMap="BaseResultMap">
+		SELECT d_id,from_device_id,to_device_id,id
+		FROM department_device_topology t
+		WHERE t.d_id =  #{departmentId,jdbcType=INTEGER}
+		AND t.from_device_id =  #{deviceId,jdbcType=INTEGER} AND t.del_flag = 0
+	</select>
+	<!--查询设备连接的tx2-->
+	<select id="selectTopologyByDeviceId" resultMap="BaseResultMap">
+		SELECT d_id,from_device_id,to_device_id,id
+		FROM department_device_topology t
+		WHERE t.d_id = #{departmentId,jdbcType=INTEGER}
+		AND t.to_device_id  = #{deviceId,jdbcType=INTEGER}  AND t.del_flag = 0
+	</select>
+</mapper>
