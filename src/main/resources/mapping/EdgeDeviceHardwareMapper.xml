@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lenovo.ailab.smartedge.dao.EdgeDeviceHardwareMapper" >
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceHardware" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="e_id" property="eId" jdbcType="INTEGER" />
+    <result column="h_id" property="hId" jdbcType="INTEGER" />
+    <result column="h_code" property="hCode" jdbcType="INTEGER" />
+    <result column="setting" property="setting" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="del_flag" property="delFlag" jdbcType="BIT" />
+  </resultMap>
+  <update id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    update edge_device_hardware set del_flag=1
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <!--删除配置单-->
+  <update id="deleteEdgeDeviceHardwareById" parameterType="java.util.LinkedHashMap" >
+    UPDATE edge_device_hardware SET del_flag=1
+    WHERE e_id = #{deviceId,jdbcType=INTEGER}
+  </update>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceHardware" >
+    INSERT INTO edge_device_hardware (id, e_id, h_id, setting, create_time, del_flag)
+    VALUES (#{id,jdbcType=INTEGER}, #{eId,jdbcType=INTEGER}, #{hId,jdbcType=INTEGER},
+      #{setting,jdbcType=CHAR}, NOW(),0
+      )
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceHardware" >
+    UPDATE edge_device_hardware
+    SET e_id = #{eId,jdbcType=INTEGER},
+      h_id = #{hId,jdbcType=INTEGER},
+      setting = #{setting,jdbcType=CHAR},
+      create_time = NOW(),
+      del_flag = 0
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT id, e_id, h_id, setting, create_time, del_flag
+    FROM edge_device_hardware
+    WHERE id = #{id,jdbcType=INTEGER} AND del_flag = 0
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    SELECT id, e_id, h_id, setting, create_time, del_flag
+    FROM edge_device_hardware WHERE del_flag = 0
+  </select>
+  <select id="selectEdgeDeviceHardwareByDeviceId" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.h_id, e.setting, e.create_time, e.del_flag,h.h_code AS hCode,h.`name` AS hName,h.type AS hType,h.parameter AS hParameter
+    FROM edge_device_hardware e
+    LEFT JOIN hardware h ON e.h_id = h.id
+    WHERE e.e_id = #{deviceId,jdbcType=INTEGER} AND e.del_flag = 0
+  </select>
+  <select id="selectEdgeDeviceHardwareByeId" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.h_id, e.setting, e.create_time, e.del_flag,h.h_code AS hCode,h.`name` AS hName,h.type AS hType,h.json_config AS hJsonConfig,h.parameter AS hParameter
+    FROM edge_device_hardware e
+    LEFT JOIN hardware h ON e.h_id = h.id
+    WHERE e.e_id = #{deviceId,jdbcType=INTEGER} AND e.del_flag = 0
+  </select>
+  <!--根据hids查询智能硬件-->
+  <select id="selectEdgeDeviceHardwareByHid" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.h_id, e.setting, e.create_time, e.del_flag
+    FROM edge_device_hardware e
+    WHERE e.h_id in
+    <foreach collection="hIds" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND e.del_flag = 0
+  </select>
+  <!--根据ids查询智能硬件-->
+  <select id="selectEdgeDeviceHardwareByDeviceIds" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.h_id, e.setting, e.create_time, e.del_flag, h.`status` AS hStatus,h.h_code AS hCode,h.`name` AS hName,h.type AS hType,h.parameter AS hParameter,h.json_config AS hJsonConfig
+    FROM edge_device_hardware e
+    LEFT JOIN hardware h ON e.h_id = h.id
+    WHERE e.e_id in
+    <foreach collection="deviceIds" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND e.del_flag = 0
+  </select>
+  <!--查询门店部署文件-->
+  <select id="selectAllEdgeDeviceHardwareByDeviceId" resultType ="com.lenovo.ailab.smartedge.dao.po.HardwareDeploymentFile"  parameterType="java.lang.Integer" >
+    SELECT h.id,h.d_id AS dId,h.deployment_file_name AS deploymentFileName,h.create_time AS createTime,h.version,h.deployment_file_path AS deploymentFilePath,
+    h.description,h.deployment_file_size AS deploymentFileSize,d.btit_d_code AS btitdCode
+    FROM hardware_deployment_files h LEFT JOIN department d ON h.d_id = d.id
+    WHERE  d.del_flag = 0
+     <if test="null != deviceId and '' != deviceId">
+         AND  h.d_id =#{deviceId,jdbcType=INTEGER}
+     </if>
+     ORDER BY h.create_time DESC
+  </select>
+  <select id="selectEdgeDeviceHardwareByHardwareId" resultMap="BaseResultMap"  >
+    select id, e_id, h_id, setting, create_time, del_flag
+    from edge_device_hardware  where e_id = #{deviceId,jdbcType=INTEGER} and h_id= #{hardwareId,jdbcType=INTEGER}
+  </select>
+  
+</mapper>

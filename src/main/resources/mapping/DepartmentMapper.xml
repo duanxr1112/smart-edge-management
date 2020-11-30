@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.DepartmentMapper">
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.Department">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="d_code" jdbcType="VARCHAR" property="dCode" />
+    <result column="btit_d_code" jdbcType="VARCHAR" property="btitdCode" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="tenant" jdbcType="VARCHAR" property="tenant" />
+    <result column="address" jdbcType="VARCHAR" property="address" />
+    <result column="region" jdbcType="VARCHAR" property="region" />
+    <result column="info" jdbcType="CHAR" property="info" />
+    <result column="device_deploy_info" jdbcType="CHAR" property="deviceDeployInfo" />
+    <result column="background_image_name" jdbcType="VARCHAR" property="backgroundImageName" />
+    <result column="background_image_path" jdbcType="VARCHAR" property="backgroundImagePath" />
+    <result column="effect_picture_path" jdbcType="VARCHAR" property="effectPicturePath" />
+    <result column="effect_picture_name" jdbcType="VARCHAR" property="effectPictureName" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="del_flag" jdbcType="BIT" property="delFlag" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey">
+    UPDATE department
+    SET del_flag = 1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.Department" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO department (id, d_code,btit_d_code,tenant, name, address,region,info, device_deploy_info, background_image_name, background_image_path, create_time, del_flag,effect_picture_name,effect_picture_path)
+    VALUES (#{id,jdbcType=INTEGER}, #{dCode,jdbcType=VARCHAR},#{btitdCode,jdbcType=VARCHAR},#{tenant,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR},#{address,jdbcType=VARCHAR},#{region,jdbcType=VARCHAR}, #{info,jdbcType=CHAR},
+    #{deviceDeployInfo,jdbcType=CHAR},#{backgroundImageName,jdbcType=VARCHAR}, #{backgroundImagePath,jdbcType=VARCHAR}, NOW(), 0,#{effectPictureName,jdbcType=VARCHAR},#{effectPicturePath,jdbcType=VARCHAR})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.Department">
+    UPDATE department
+    SET d_code = #{dCode,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      tenant = #{tenant,jdbcType=INTEGER},
+      address = #{address,jdbcType=VARCHAR},
+      btit_d_code = #{btitdCode,jdbcType=VARCHAR},
+      region = #{region,jdbcType=VARCHAR},
+      info = #{info,jdbcType=CHAR},
+      device_deploy_info = #{deviceDeployInfo,jdbcType=CHAR},
+      background_image_name = #{backgroundImageName,jdbcType=VARCHAR},
+      background_image_path = #{backgroundImagePath,jdbcType=VARCHAR},
+      effect_picture_name = #{effectPictureName,jdbcType=VARCHAR},
+      effect_picture_path = #{effectPicturePath,jdbcType=VARCHAR},
+      update_time = NOW(),
+      del_flag = 0
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT id, d_code, name,tenant,btit_d_code, address, region, info, device_deploy_info, background_image_name, background_image_path,
+    create_time,update_time, del_flag,effect_picture_name,effect_picture_path
+    FROM department
+    WHERE id = #{id,jdbcType=INTEGER} AND del_flag=0
+  </select>
+  <!--根据btitCode查询门店-->
+  <select id="selectByBtitDepartmentCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+    SELECT id, d_code, name, address, region, info, device_deploy_info, background_image_name, background_image_path, create_time, del_flag
+    FROM department
+    WHERE btit_d_code = #{departmentCode,jdbcType=VARCHAR} AND del_flag=0
+  </select>
+  <!--查询全部店铺-->
+  <select id="selectAll" resultMap="BaseResultMap">
+    SELECT id, d_code,btit_d_code, tenant,name, address, info, region, device_deploy_info,address, background_image_name, background_image_path, create_time,update_time, del_flag
+    FROM department WHERE del_flag=0
+    <if test="name != '' and name != null">
+      AND name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="dCode !='' and dCode !=null">
+      AND d_code LIKE concat('%',#{dCode},'%')
+    </if>
+    ORDER BY create_time DESC
+  </select>
+
+  <!--修改过店铺相关，更新时间-->
+  <update id="updateDepertment">
+    UPDATE department SET update_time = NOW() WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByDcode" resultMap="BaseResultMap">
+    SELECT id, d_code, name, info, address,region,device_deploy_info,background_image_name,background_image_path, create_time,
+    del_flag
+    FROM department WHERE d_code=#{dCode,jdbcType=VARCHAR} AND del_flag=0
+  </select>
+
+  <!--获取店铺地址下拉菜单-->
+  <select id="getDepartmentAddress" resultType="com.lenovo.ailab.smartedge.dao.po.City">
+    SELECT id,pid,`name`
+    FROM province_city_district
+  </select>
+  <!--获取店铺头像-->
+  <select id="downloadthumbnail" resultMap="BaseResultMap">
+    SELECT id, d_code, name, info, address,device_deploy_info,background_image_name,background_image_path, create_time,del_flag
+    FROM department WHERE background_image_path=#{path,jdbcType=VARCHAR} AND del_flag=0
+  </select>
+  <!--查询log-->
+  <select id="getLog" resultType="com.lenovo.ailab.smartedge.dao.po.ModelLog">
+    select id,content,name,code,create_time AS createTime,store_id AS storeId,edge_server_id AS edgeServerId from model_log WHERE  store_id = #{id,jdbcType=INTEGER}
+    <if test="startTime != null and '' != startTime">
+      AND create_time &gt;= #{startTime ,jdbcType=VARCHAR}
+    </if>
+    <if test="endTime != null and '' != endTime">
+      AND create_time &lt; #{endTime ,jdbcType=VARCHAR}
+    </if>
+  </select>
+</mapper>

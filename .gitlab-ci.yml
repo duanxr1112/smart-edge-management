@@ -1,0 +1,24 @@
+stages:
+  - deploy
+deploy_dev:
+  stage: deploy
+  tags:
+    - smart-edge-management
+  only:
+    - developer
+  script:
+    - cd /usr/local/java/javajdk/bin/jenkins-cli
+    - pwd
+    - echo $CI_COMMIT_REF_NAME
+    - java -jar jenkins-cli.jar -s http://10.110.156.67:30522/ -auth jenkins:116b75a8e77978564b19b0a911efd86b12 build smart-edge-management
+deploy_test:
+  stage: deploy
+  tags:
+    - smart-edge-management
+  only:
+    - tags
+  script:
+    - cd /usr/local/java/javajdk/bin/jenkins-cli
+    - pwd
+    - echo $CI_COMMIT_REF_NAME
+    - java -jar jenkins-cli.jar -s http://10.110.156.67:30522/ -auth jenkins:116b75a8e77978564b19b0a911efd86b12 build smart-edge-management -p tag=$CI_COMMIT_REF_NAME

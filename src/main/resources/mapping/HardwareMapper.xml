@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.HardwareMapper">
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.Hardware">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="h_code" jdbcType="VARCHAR" property="hCode" />
+    <result column="version" jdbcType="VARCHAR" property="version" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="type" jdbcType="VARCHAR" property="type" />
+    <result column="attrs" jdbcType="CHAR" property="attrs" />
+    <result column="setting" jdbcType="CHAR" property="setting" />
+    <result column="price" jdbcType="REAL" property="price" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="parameter" jdbcType="VARCHAR" property="parameter" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="end_type_id" jdbcType="VARCHAR" property="endTypeId" />
+    <result column="del_flag" jdbcType="BIT" property="delFlag" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    UPDATE hardware SET del_flag = 1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.Hardware" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO hardware (id, h_code,version, name, type,end_type_id, price,description,parameter,create_time,del_flag,json_config)
+    VALUES (#{id,jdbcType=INTEGER},#{hCode,jdbcType=VARCHAR},#{version,jdbcType=VARCHAR},#{name,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR},
+     #{endTypeId,jdbcType=VARCHAR},#{price,jdbcType=REAL},#{description,jdbcType=VARCHAR},#{parameter,jdbcType=VARCHAR},NOW(),0,#{jsonConfig,jdbcType=VARCHAR})
+  </insert>
+  
+  <insert id="insertversion" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO hardware ( h_code,version, name, type, attrs, setting, price)
+    select h_code,#{version,jdbcType=VARCHAR},name,type,attrs,setting,price from hardware where id=#{id,jdbcType=INTEGER}
+  </insert>
+  
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.Hardware">
+    UPDATE hardware
+    SET version = #{version,jdbcType=VARCHAR},
+        name = #{name,jdbcType=VARCHAR},
+        type = #{type,jdbcType=VARCHAR},
+        attrs = #{attrs,jdbcType=CHAR},
+        setting = #{setting,jdbcType=CHAR},
+        price = #{price,jdbcType=REAL},
+        description = #{description,jdbcType=VARCHAR},
+        end_type_id = #{endTypeId,jdbcType=INTEGER},
+        parameter = #{parameter,jdbcType=VARCHAR},
+        json_config = #{jsonConfig,jdbcType=VARCHAR}
+    WHERE id = #{id,jdbcType=INTEGER} AND del_flag=0
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT h.id, h.h_code,h.version, h.name, h.type, h.end_type_id,h.attrs,h.setting, h.price, h.create_time,h.del_flag,h.description,h.parameter,e.`name` AS endTypeName
+    FROM hardware h INNER JOIN drop_down_dictionary e
+    ON h.end_type_id = e.id
+    WHERE h.id = #{id,jdbcType=INTEGER} AND h.del_flag=0
+  </select>
+    <select id="selectByPrimaryKeyAndEdge" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT h.id, h.h_code,h.version, h.name, h.type, h.end_type_id,h.attrs,h.setting, h.price, h.create_time,h.del_flag,h.description,h.parameter
+    FROM hardware h
+    WHERE h.id = #{id,jdbcType=INTEGER} AND h.del_flag=0
+   </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    SELECT id, h_code,version, name, type, end_type_id,attrs, setting, price, create_time, del_flag,description,parameter
+    FROM hardware
+    WHERE del_flag=0
+    <if test="name != '' and name != null">
+      AND name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="hCode !='' and hCode !=null">
+      AND h_code LIKE concat('%',#{hCode},'%')
+    </if>
+  </select>
+  <select id="selectHardwareByType" parameterType="java.lang.String" resultMap="BaseResultMap">
+    SELECT h.id, h.h_code,h.version, h.name, h.type, h.end_type_id,h.attrs,h.setting, h.price, h.create_time,h.del_flag,h.description,h.parameter,e.`name` AS endTypeName
+    FROM hardware h INNER JOIN drop_down_dictionary e
+    ON h.end_type_id = e.id
+    WHERE h.type = 'end' AND h.del_flag=0
+    <if test="name != '' and name != null">
+      AND h.name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="hCode !='' and hCode !=null">
+      AND h .h_code LIKE concat('%',#{hCode},'%')
+    </if>
+    ORDER BY h.create_time DESC
+  </select>
+  <!--查询边缘节点-->
+  <select id="selectHardwareByTypeForEdge" parameterType="java.lang.String" resultMap="BaseResultMap">
+    SELECT h.id, h.h_code,h.version, h.name, h.type, h.end_type_id,h.attrs,h.setting, h.price, h.create_time,h.del_flag,h.description,h.parameter
+    FROM hardware h
+    WHERE h.type = 'edge' AND h.del_flag=0
+    <if test="name != '' and name != null">
+      AND h.name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="hCode !='' and hCode !=null">
+      AND h .h_code LIKE concat('%',#{hCode},'%')
+    </if>
+    ORDER BY h.create_time DESC
+  </select>
+  <!--边缘节点下拉菜单-->
+  <select id="selectNoPageHardware" resultMap="BaseResultMap">
+    SELECT id, h_code,version, name, type, attrs, setting, price, create_time, del_flag,description,parameter,end_type_id
+    FROM hardware
+    WHERE del_flag = 0
+    <if test="type != null and '' != type">
+      AND type = #{type,jdbcType=VARCHAR}
+    </if>
+    <if test="endTypeId != null and '' != endTypeId">
+      AND end_type_id = #{endTypeId,jdbcType=INTEGER}
+    </if>
+  </select>
+  <!--智能硬件类型-->
+  <select id="selectEndType" resultType="com.lenovo.ailab.smartedge.dao.po.HardwareEnd">
+    SELECT id,  name, create_time, del_flag FROM drop_down_dictionary
+    WHERE del_flag = 0
+  </select>
+  <!--上传摄像头部署文件-->
+  <insert id="insertHardwareDeploymentFile">
+    INSERT INTO hardware_deployment_files (d_id,version,deployment_file_path,create_time,description,deployment_file_name,deployment_file_size,type)
+    VALUES
+    (#{dId,jdbcType=INTEGER},#{version,jdbcType=VARCHAR},#{deploymentFilePath,jdbcType=VARCHAR},NOW(),#{description,jdbcType=VARCHAR},#{deploymentFileName,jdbcType=VARCHAR},#{deploymentFileSize,jdbcType=INTEGER},#{type,jdbcType=VARCHAR})
+  </insert>
+  <!--上传工具-->
+  <update id="updateHardwareInstrument">
+    UPDATE hardware_deployment_files
+    SET d_id = #{dId,jdbcType=INTEGER},
+    version = #{version,jdbcType=VARCHAR},
+    deployment_file_path = #{deploymentFilePath,jdbcType=VARCHAR},
+    create_time = NOW(),
+    description = #{description,jdbcType=VARCHAR},
+    deployment_file_name = #{deploymentFileName,jdbcType=VARCHAR},
+    deployment_file_size = #{deploymentFileSize,jdbcType=INTEGER}
+    WHERE type = #{type,jdbcType=VARCHAR}
+  </update>
+  <!--上传摄像头安装图片-->
+  <update id="insertHardwareInstallImage">
+     UPDATE department_device SET
+     <if test="coverageAreaImage != null and '' != coverageAreaImage">
+       coverage_area_image = #{coverageAreaImage,jdbcType=VARCHAR},
+       install_status = #{installStatus,jdbcType=INTEGER}
+     </if>
+     <if test="installTheImage != null and '' != installTheImage">
+       install_the_image = #{installTheImage,jdbcType=VARCHAR},
+       install_the_image_id = #{installTheImageId,jdbcType=VARCHAR}
+     </if>
+     WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+
+    <!--查询工具-->
+    <select id="selectHardwareInstrument" resultType="com.lenovo.ailab.smartedge.dao.po.HardwareDeploymentFile">
+        SELECT d_id as dId,version,deployment_file_path as deploymentFilePath,create_time AS createTime,description,deployment_file_name AS deploymentFileName,deployment_file_size AS deploymentFileSize,type
+        FROM  hardware_deployment_files
+        WHERE type = #{type,jdbcType=VARCHAR}
+    </select>
+</mapper>

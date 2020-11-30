@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.SoftwareMapper">
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.Software">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="s_code" jdbcType="VARCHAR" property="sCode" />
+    <result column="version" jdbcType="VARCHAR" property="version" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="info" jdbcType="VARCHAR" property="info" />
+    <result column="file_name" jdbcType="VARCHAR" property="fileName" />
+    <result column="file_path" jdbcType="VARCHAR" property="filePath" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="parameter" jdbcType="VARCHAR" property="parameter" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="del_flag" jdbcType="BIT" property="delFlag" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    UPDATE software set del_flag=1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.Software" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO software (id, s_code, version, name, info, file_name,file_path, create_time,description,parameter,json_config)
+    VALUES (#{id,jdbcType=INTEGER}, #{sCode,jdbcType=VARCHAR}, #{version,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{info,jdbcType=VARCHAR},
+    #{fileName,jdbcType=VARCHAR},#{filePath,jdbcType=VARCHAR},NOW(),#{description,jdbcType=VARCHAR},#{parameter,jdbcType=VARCHAR},#{jsonConfig,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="insertversion" useGeneratedKeys="true"  keyProperty="id">
+    UPDATE software SET version = #{version,jdbcType=VARCHAR},file_name = #{fileName,jdbcType=VARCHAR},file_path = #{filePath,jdbcType=VARCHAR}  WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.Software">
+    UPDATE software
+    SET s_code = #{sCode,jdbcType=VARCHAR},
+    version = #{version,jdbcType=VARCHAR},
+    name = #{name,jdbcType=VARCHAR},
+    info = #{info,jdbcType=VARCHAR},
+    file_path = #{filePath,jdbcType=VARCHAR},
+    description = #{description,jdbcType=VARCHAR},
+    parameter = #{parameter,jdbcType=VARCHAR},
+    json_config = #{jsonConfig,jdbcType=VARCHAR},
+    create_time = NOW()
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT id, s_code, version, name, info, file_path,file_name,create_time, del_flag,description,parameter
+    FROM software
+    WHERE id = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectByCode"  resultMap="BaseResultMap">
+    SELECT id, s_code, version, name, info, file_path,file_name,create_time, del_flag,description,parameter
+    FROM software
+    WHERE s_code = #{code,jdbcType=VARCHAR}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    SELECT s.id, s.s_code, s.version, s.name, s.info, s.file_path,s.file_name,s.create_time, s.del_flag,s.description,s.parameter
+    FROM software s
+    WHERE s.del_flag=0
+    <if test="name != '' and name != null">
+      AND s.name LIKE concat('%',#{name},'%')
+    </if>
+    <if test="sCode !='' and sCode !=null">
+      AND s.s_code LIKE concat('%',#{sCode},'%')
+    </if>
+    ORDER BY s.create_time DESC
+  </select>
+
+  <!--软件下拉菜单-->
+  <select id="selectPageSoftware" resultMap="BaseResultMap" >
+    SELECT  id, s_code, version, name, info, file_path,file_name,create_time, del_flag,description,parameter FROM software WHERE del_flag=0
+  </select>
+
+  <!-- 软件详情-->
+  <select id="selectEdgeServerDetail" resultType="com.lenovo.ailab.smartedge.dao.po.Software">
+    SELECT  s.id,s.s_code AS sCode, s.version,s.name, s.file_name AS fileName, s.file_path AS filePath,s.description,e.id AS eId,d.id AS edgeServerId,d.server_code AS edgeServerCode,d.server_name AS edgeServerName
+    FROM department_device d,edge_device e,edge_device_software es,software s
+    WHERE d.e_id = e.id AND e.id = es.e_id AND es.s_id = s.id AND s.del_flag ='0' AND d.del_flag ='0' AND e.del_flag ='0' AND es.del_flag ='0'
+    AND d.d_id = #{departmentId,jdbcType=INTEGER}
+    <if test="deviceId != null and ''!= deviceId">
+      AND d.id = #{deviceId,jdbcType=INTEGER}
+    </if>
+  </select>
+
+  <!--根据tx2id查询软件包-->
+  <select id="selectByEdgeServerId" resultMap="BaseResultMap">
+    SELECT id, s_code, version, name, info, file_path,file_name,create_time, del_flag,description,parameter
+    FROM software
+    WHERE id IN(
+        SELECT s_id FROM edge_device_software WHERE e_id =(
+        SELECT e_id FROM department_device WHERE id = #{deviceId,jdbcType=INTEGER}))
+    AND `file_name` = #{name,jdbcType=VARCHAR}
+    AND del_flag = 0
+  </select>
+
+  <!--新增softwareConfig-->
+  <insert id="insertSoftWareConfig" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+    INSERT INTO software_config(s_id,s_name,s_url,d_id,version,content,code,edge_device_id,stop_script) VALUES
+    <foreach collection="list" item="item" index="index" separator=",">
+    (#{item.sId,jdbcType=INTEGER},#{item.sName,jdbcType=VARCHAR},#{item.sUrl,jdbcType=VARCHAR},#{item.dId,jdbcType=INTEGER},#{item.version,jdbcType=VARCHAR},
+      #{item.content,jdbcType=VARCHAR},#{item.code,jdbcType=VARCHAR},#{item.edgeDeviceId,jdbcType=VARCHAR},#{item.stopScript,jdbcType=VARCHAR})
+    </foreach>
+  </insert>
+
+    <!--新增softwareConfigbean-->
+    <insert id="insertSoftWareConfigBean" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO software_config(s_id,s_name,s_url,d_id,version,content,code,edge_device_id,stop_script,can_init_flag) VALUES
+        (#{sId,jdbcType=INTEGER},#{sName,jdbcType=VARCHAR},#{sUrl,jdbcType=VARCHAR},#{dId,jdbcType=INTEGER},#{version,jdbcType=VARCHAR},
+        #{content,jdbcType=VARCHAR},#{code,jdbcType=VARCHAR},#{edgeDeviceId,jdbcType=VARCHAR},#{stopScript,jdbcType=VARCHAR},#{canInitFlag,jdbcType=VARCHAR})
+    </insert>
+
+  <!--查询sodtwareConfig-->
+  <select id="selectSoftwareConfig" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig"
+          resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+    SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,s_url AS sUrl,run_script AS runScript,can_init_flag AS canInitFlag
+    FROM software_config WHERE edge_device_id =#{deviceId,jdbcType=INTEGER} AND d_id =#{storeId,jdbcType=INTEGER}
+  </select>
+    <!--查询sodtwareConfig-->
+    <select id="selectSoftwareConfigForCanUse" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig"
+            resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+    SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,s_url AS sUrl,run_script AS runScript,can_init_flag AS canInitFlag
+    FROM software_config WHERE edge_device_id =#{deviceId,jdbcType=INTEGER} AND d_id =#{storeId,jdbcType=INTEGER} AND del_flag = 0
+  </select>
+
+    <!--查询sodtwareConfig-->
+    <select id="selectSoftwareConfigAndSoftware" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig"
+            resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+     SELECT sf.id,sf.s_id as sId,sf.d_id as dId,sf.version,sf.content,sf.code as code,sf.edge_device_id as edgeDeviceId,sf.s_url AS sUrl,sf.run_script AS runScript,
+     sf.can_init_flag AS canInitFlag,s.`name` AS sName,s.s_code AS sCode,sf.del_flag AS delFlag
+    FROM software_config sf INNER JOIN software s WHERE sf.s_id = s.id AND sf.edge_device_id =#{deviceId,jdbcType=INTEGER} AND sf.d_id =#{storeId,jdbcType=INTEGER} AND s.del_flag =0
+    </select>
+
+  <!--查询sodtwareConfig-->
+  <select id="selectSoftwareConfigBysId" parameterType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig"
+          resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+    SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,s_url AS sUrl
+    FROM software_config WHERE edge_device_id =#{deviceId,jdbcType=INTEGER} AND d_id =#{storeId,jdbcType=INTEGER} AND s_id=#{sId,jdbcType=INTEGER}
+    AND del_flag = 0
+  </select>
+
+    <!--修改softwareConfig-->
+    <update id="updateSoftwareConfig">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE software_config SET
+            <if test="null != item.shell and ''!= item.shell">
+                 run_script = #{item.shell,jdbcType=VARCHAR},
+            </if>
+            <if test="null != item.content and ''!= item.content">
+                 content=#{item.content,jdbcType=VARCHAR}
+            </if>
+            WHERE d_id = #{storeId,jdbcType=INTEGER}
+            AND edge_device_id = #{deviceId,jdbcType=INTEGER}
+            AND code = #{item.softwareConfigCode,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+
+  <!--修改softwareConfig 可以初始化-->
+  <update id="updateSoftwareConfigCanInit">
+      UPDATE software_config SET can_init_flag = 1
+      WHERE d_id = #{storeId,jdbcType=INTEGER}
+      AND edge_device_id = #{deviceId,jdbcType=INTEGER}
+  </update>
+    <!--查询software 执行脚本-->
+    <select id="selectModelScript" resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+        SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,s_url AS sUrl,run_script as runScript
+        FROM software_config WHERE code=#{code,jdbcType=VARCHAR}
+        AND del_flag = 0
+    </select>
+
+  <update id="updateVersion">
+     UPDATE software_config
+     SET version = #{version,jdbcType=VARCHAR}, s_url = #{url,jdbcType=VARCHAR},s_name = #{fileName,jdbcType=VARCHAR}
+     WHERE s_id = #{sId,jdbcType=INTEGER} AND d_id = #{storeId,jdbcType=INTEGER} AND edge_device_id = #{deviceId,jdbcType=INTEGER}
+  </update>
+
+  <!--查看详情-->
+  <select id="selectSoftwareConfigById" resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+     SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,s_url AS sUrl,run_script as runScript
+      FROM software_config WHERE id = #{deviceId,jdbcType=INTEGER}
+      AND del_flag = 0
+  </select>
+    <!--修改配置-->
+    <update id="updateSoftwareConfigByModelCode">
+        UPDATE software_config SET content = #{serverConfig,jdbcType=VARCHAR} WHERE `code` = #{modelCode,jdbcType=VARCHAR}
+    </update>
+    <!--删除模型-->
+    <update id="deleteModelById">
+         UPDATE software_config SET del_flag = 1 WHERE `code` = #{modelCode,jdbcType=VARCHAR}
+    </update>
+    <!--查看stopScript-->
+    <select id="selectModelStopScript" resultType="com.lenovo.ailab.smartedge.dao.vo.SoftwareConfig">
+      SELECT id,s_id as sId,s_name AS sName,d_id as dId,version,content,code,edge_device_id as edgeDeviceId,
+      s_url AS sUrl,run_script as runScript,stop_script AS stopScript
+      FROM software_config WHERE `code` = #{modelCode,jdbcType=VARCHAR}
+      AND del_flag = 0
+    </select>
+    <!--记录日志-->
+    <insert id="insertModelConfigLog" parameterType="com.lenovo.ailab.smartedge.dao.po.ModelConfigLog">
+        INSERT INTO model_log(name,content,code,store_id,edge_server_id,create_time)
+        VALUES (#{name,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR},#{code,jdbcType=VARCHAR},#{storeId,jdbcType=INTEGER},#{edgeServerId,jdbcType=INTEGER},#{createTime,jdbcType=VARCHAR})
+    </insert>
+</mapper>

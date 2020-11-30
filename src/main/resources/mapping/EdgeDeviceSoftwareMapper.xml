@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lenovo.ailab.smartedge.dao.EdgeDeviceSoftwareMapper" >
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceSoftware" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="e_id" property="eId" jdbcType="INTEGER" />
+    <result column="s_id" property="sId" jdbcType="INTEGER" />
+    <result column="s_code" property="sCode" jdbcType="INTEGER" />
+    <result column="setting" property="setting" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="file_path" jdbcType="VARCHAR" property="filePath" />
+    <result column="file_name" jdbcType="VARCHAR" property="fileName" />
+    <result column="del_flag" property="delFlag" jdbcType="BIT" />
+  </resultMap>
+  <update id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    UPDATE edge_device_software SET del_flag=1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <!--删除配置单相关软件-->
+  <update id="deleteEdgeDeviceSoftwareById" parameterType="java.util.LinkedHashMap" >
+    UPDATE edge_device_software SET del_flag=1
+    WHERE e_id = #{deviceId,jdbcType=INTEGER}
+  </update>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceSoftware" >
+    INSERT INTO edge_device_software (id, e_id, s_id, setting,create_time,del_flag)
+    VALUES (#{id,jdbcType=INTEGER}, #{eId,jdbcType=INTEGER}, #{sId,jdbcType=INTEGER}, #{setting,jdbcType=CHAR},NOW(),0)
+  </insert>
+  <!--批量插入-->
+  <insert id="insertList" parameterType="java.util.List" >
+    INSERT INTO edge_device_software (id,e_id,s_id,setting,create_time,del_flag)
+    VALUES
+    <foreach collection="list" item="it" separator=",">
+      (#{it.id,jdbcType=INTEGER},#{it.eId,jdbcType=INTEGER},#{it.sId,jdbcType=INTEGER},#{it.setting,jdbcType=VARCHAR},NOW(),0)
+    </foreach>
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDeviceSoftware" >
+    UPDATE edge_device_software
+    SET e_id = #{eId,jdbcType=INTEGER},
+        s_id = #{sId,jdbcType=INTEGER},
+        setting = #{setting,jdbcType=CHAR}
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT id, e_id, s_id, setting, create_time, del_flag
+    FROM edge_device_software
+    WHERE id = #{id,jdbcType=INTEGER} AND del_flag=0
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    SELECT id, e_id, s_id, setting, create_time, del_flag
+    FROM edge_device_software WHERE del_flag=0
+  </select>
+  <select id="selectAllEdgeDeviceSoftwareByDeviceId" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT id, e_id, s_id, setting, create_time, del_flag
+    FROM edge_device_software
+    WHERE e_id = #{deviceId,jdbcType=INTEGER} AND del_flag=0
+  </select>
+  <!--批量查询根据sIds-->
+  <select id="selectEdgeDeviceBySIds" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    SELECT id, e_id, s_id, setting, create_time, del_flag
+    FROM edge_device_software
+    WHERE s_id in
+    <foreach collection="sIds" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND del_flag=0
+  </select>
+  <select id="selectEdgeDeviceSoftwareByDeviceId" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.s_id, e.setting, e.create_time, e.del_flag,s.s_code AS sCode,s.`name` AS sName
+    FROM edge_device_software e
+    LEFT JOIN software s ON e.s_id=s.id
+    WHERE e.e_id = #{deviceId,jdbcType=INTEGER} AND e.del_flag = 0
+  </select>
+  <!--批量查询软件-->
+  <select id="selectEdgeDeviceSoftwareByDeviceIds" resultMap="BaseResultMap"  parameterType="java.lang.Integer" >
+    SELECT e.id, e.e_id, e.s_id, e.setting, e.create_time, e.del_flag,s.s_code ,s.`name` AS sName,s.parameter AS sParameter,s.file_path AS filePath,
+    s.file_name AS fileName
+    FROM edge_device_software e
+    LEFT JOIN software s ON e.s_id=s.id
+    WHERE e.e_id in
+    <foreach collection="deviceIds" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND e.del_flag = 0
+  </select>
+
+</mapper>

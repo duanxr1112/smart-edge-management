@@ -1,0 +1,41 @@
+kind: Secret
+apiVersion: v1
+data:
+  key: QVFEWWFsbGRBbXZXTmhBQUN2ZW9pL1cxbDRnZ3dGZTBOUk4rYlE9PQo=
+metadata:
+  name: ceph-secret
+  namespace: tw
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: smart-edge-management
+  namespace: tw
+spec:
+  capacity:
+    storage: 20Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  cephfs:
+    monitors:
+      - 10.110.149.3
+      - 10.110.149.4
+      - 10.110.149.5
+    path: /ai-platform/smartstore/video
+    secretRef:
+      name: ceph-secret
+    user: admin
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata: 
+  name: smart-edge-management
+  namespace: tw
+spec: 
+  accessModes:
+    - ReadWriteMany
+  resources: 
+    requests: 
+      storage: 20Ti
+  volumeName: smart-edge-management

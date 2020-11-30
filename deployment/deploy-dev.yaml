@@ -1,0 +1,117 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: smart-edge-management
+  namespace: aialive-dev
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx-dev
+spec:
+  rules:
+  - host: dev.brain.lenovo.com
+    http:
+      paths:
+      - path: /smart-edge-management
+        backend:
+          serviceName: smart-edge-management
+          servicePort: 8080
+  tls:
+  - hosts:
+    - dev.brain.lenovo.com
+    secretName: dev.brain.lenovo.com
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: timezone
+  namespace: aialive-dev
+data:
+  timezone: Asia/Shanghai
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-edge-management-cfg
+  namespace: aialive-dev
+data:
+  JAVA_OPTS: |
+    -Dserver.port=8080 
+    -Dlogging.level.root=INFO 
+    -Dspring.datasource.url=jdbc:mysql://mysql-service:3306/digital_store_operation?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=false
+    -Dspring.datasource.username=root 
+    -Dspring.datasource.password=l1_Admin 
+    -Dfilepath.software=/data/smart-edge-management/files/
+    -Dfilepath.department=/data/smart-edge-management/department/
+    -Dfilepath.video=/data/videos/
+    -Dfilepath.system=/data/smart-edge-management/system/
+    -Dfilepath.edge-device=/data/smart-edge-management/edge-device/
+    -Dvideo.upload.url=https://smart-edge.brain.lenovo.com/smart-edge-management/video/upload/
+    -DcontrolServer.url=http://k8s-remora.remora:8088/
+    -DcontrolServer.caremaVideoStream=https://tw-sds.brain.lenovo.com/store/digital
+    -Dface.server-url=http://10.110.156.156:31538
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: smart-edge-management
+  name: smart-edge-management
+  namespace: aialive-dev
+spec:
+  ports:
+  - name: smart-edge-management
+    port: 8080        
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: smart-edge-management
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: smart-edge-management
+  namespace: aialive-dev
+spec:
+  replicas: 1
+  template: 
+    metadata:
+      labels: 
+        app: smart-edge-management
+    spec:
+      hostAliases:
+      - ip: "10.110.156.64"
+        hostnames:
+        - "smart-edge.brain.lenovo.com"
+      nodeSelector:
+        node: worker
+      containers: 
+      - name: smart-edge-management  
+        image: hub.cap.lenovo.com/aialive/smart-edge-management:dev
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: time
+          mountPath: /etc/localtime   
+        - name: timezone
+          mountPath: /etc/timezone
+          subPath: timezone
+        - name: video
+          mountPath: /data/videos/
+        env:
+        - name: JAVA_OPTS
+          valueFrom:
+            configMapKeyRef:
+              name: smart-edge-management-cfg
+              key: JAVA_OPTS
+      volumes:
+      - name: time
+        hostPath:
+          path: /etc/localtime
+      - name: video
+        persistentVolumeClaim:
+          claimName: smart-edge-management
+      - name: timezone
+        configMap:
+          name: timezone

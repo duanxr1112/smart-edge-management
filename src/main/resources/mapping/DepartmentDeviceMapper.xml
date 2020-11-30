@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.DepartmentDeviceMapper">
+	<resultMap id="BaseResultMap"
+		type="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice">
+		<id column="id" jdbcType="INTEGER" property="id" />
+		<result column="d_id" jdbcType="INTEGER" property="dId" />
+		<result column="e_id" jdbcType="INTEGER" property="eId" />
+		<result column="setting" jdbcType="CHAR" property="setting" />
+		<result column="create_time" jdbcType="VARCHAR" property="createTime" />
+		<result column="is_drag" jdbcType="VARCHAR" property="isDrag" />
+		<result column="os_code" jdbcType="VARCHAR" property="osCode" />
+		<result column="btit_d_code" jdbcType="VARCHAR" property="btitdCode" />
+		<result column="json_config" jdbcType="VARCHAR" property="jsonConfig" />
+		<result column="server_code" jdbcType="VARCHAR" property="serverCode" />
+		<result column="server_config" jdbcType="VARCHAR" property="serverConfig" />
+		<result column="server_name" jdbcType="VARCHAR" property="serverName" />
+		<result column="use_type" jdbcType="VARCHAR" property="useType" />
+		<result column="config_name" jdbcType="VARCHAR" property="configName" />
+		<result column="install_status" jdbcType="VARCHAR" property="installStatus" />
+		<result column="coverage_area_image" jdbcType="VARCHAR" property="coverageAreaImage" />
+		<result column="install_the_image_id" jdbcType="VARCHAR" property="installTheImageId" />
+		<result column="install_the_image" jdbcType="VARCHAR" property="installTheImage" />
+		<result column="del_flag" jdbcType="BIT" property="delFlag" />
+	</resultMap>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		UPDATE department_device
+		SET del_flag = 1
+		WHERE d_id = #{dId,jdbcType=INTEGER}
+	</delete>
+    <delete id="deleteByDeviceId" parameterType="java.lang.Integer">
+		UPDATE department_device
+		SET del_flag = 1
+		WHERE id = #{deviceId,jdbcType=INTEGER}
+	</delete>
+	<delete id="deleteByIds" parameterType="java.lang.Integer">
+		UPDATE department_device
+		SET del_flag = 1
+		WHERE id in
+		<foreach collection="ids" item = "item" index="index" open="(" close=")" separator=",">
+			#{item,jdbcType=INTEGER}
+		</foreach>
+	</delete>
+    <!--批量删除配置单-->
+    <delete id="deleteByPrimaryKeys" parameterType="java.lang.Integer">
+		UPDATE department_device
+		SET del_flag = 1
+		WHERE d_id = #{dId,jdbcType=INTEGER} AND e_id in
+        <foreach collection="eIds" item = "item" index="index" open="(" close=")" separator=",">
+            #{item,jdbcType=INTEGER}
+        </foreach>
+	</delete>
+	<insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice" useGeneratedKeys="true"  keyProperty="id">
+		INSERT INTO department_device (d_id, e_id,server_code, create_time,del_flag,description,param,server_name,config_name)
+		VALUES (#{dId,jdbcType=INTEGER},#{eId,jdbcType=INTEGER},#{serverCode,jdbcType=VARCHAR}, NOW(),0,#{description,jdbcType=VARCHAR},#{param,jdbcType=VARCHAR},#{serverName,jdbcType=VARCHAR},#{configName,jdbcType=VARCHAR})
+	</insert>
+	<!--多条数据新增-->
+	<insert id="insertList" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice" useGeneratedKeys="true"  keyProperty="id">
+		INSERT INTO department_device (d_id, e_id,server_code, create_time,del_flag,description,param,server_name,config_name,status)
+		VALUES
+		<foreach collection="list" item="item" index="index" separator=",">
+		(#{item.dId,jdbcType=INTEGER},#{item.eId,jdbcType=INTEGER},#{item.serverCode,jdbcType=VARCHAR}, NOW(),0,#{item.description,jdbcType=VARCHAR},#{item.param,jdbcType=VARCHAR},#{item.serverName,jdbcType=VARCHAR},#{item.configName,jdbcType=VARCHAR},#{item.status,jdbcType=INTEGER})
+		</foreach>
+	</insert>
+	<!--更新摄像头状态-->
+	<update id="updateEdgeDeviceStatus">
+        UPDATE department_device SET status = #{status,jdbcType=INTEGER} WHERE id = #{cId,jdbcType=INTEGER}
+    </update>
+	<!--更新设备状态-->
+	<update id="updateDeviceStatus">
+		<foreach collection="deviceStatusVoList" item="item" separator=";">
+			UPDATE department_device SET
+				status = #{item.status,jdbcType=INTEGER}
+			WHERE server_code = #{item.serverCode,jdbcType=VARCHAR}
+		</foreach>
+    </update>
+	<update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice">
+		UPDATE department_device
+		SET server_name = #{serverName,jdbcType=VARCHAR},
+		<if test="null != eId and ''!= eId">
+            e_id = #{eCode,jdbcType=INTEGER},
+        </if>
+        <if test="null != dId and ''!= dId">
+            d_id = #{dId,jdbcType=INTEGER},
+        </if>
+		<if test="null != setting and ''!= setting">
+            setting = #{setting,jdbcType=CHAR},
+        </if>
+		is_drag = 1,
+		description = #{description,jdbcType=VARCHAR},
+		param = #{param,jdbcType=VARCHAR}
+		WHERE id = #{id,jdbcType=INTEGER}
+	</update>
+    <!--批量修改-->
+	<update id="updateListByPrimaryKey">
+		<foreach collection="list" item="item" separator=";">
+			UPDATE department_device
+			SET
+			<if test="null != item.eId and ''!= item.eId">
+				e_id = #{item.eId,jdbcType=INTEGER},
+			</if>
+			<if test="null != item.dId and ''!= item.dId">
+				d_id = #{item.dId,jdbcType=INTEGER},
+			</if>
+			<if test="null != item.setting and ''!= item.setting">
+				setting = #{item.setting,jdbcType=CHAR},
+			</if>
+			server_name = #{item.serverName,jdbcType=VARCHAR},
+			json_config = #{item.jsonConfig,jdbcType=VARCHAR},
+			is_drag = 1,
+			description = #{item.description,jdbcType=VARCHAR},
+			param = #{item.param,jdbcType=VARCHAR},
+			update_time = NOW()
+			WHERE id = #{item.id,jdbcType=INTEGER}
+		</foreach>
+	</update>
+
+	<select id="selectAll" resultMap="BaseResultMap">
+		SELECT id, d_id,  e_id, setting, create_time
+		FROM department_device WHERE del_flag=0
+	</select>
+	<!--根据门店名字和设备状态查询设备-->
+	<select id="getAllDeviceListForPage" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceForBtit">
+		SELECT e.id, e.setting,e.d_id AS dId,e.e_id AS eId, e.create_time AS createTime,e.del_flag AS delFlag, e.install_the_image AS installTheImage,
+		e.server_name AS deviceName,e.config_name AS configName, e.server_code AS deviceCode, e.description, e.json_config AS jsonConfig, e.`status`,
+		e.use_type AS type,d.`name` AS departmentName,d.tenant,d.btit_d_code AS btitdCode
+		FROM department_device e,department d,edge_device ed
+		WHERE e.d_id = d.id AND e.e_id = ed.id AND e.del_flag=0 AND ed.type = #{type,jdbcType=VARCHAR}
+        <if test="tenant != null and ''!= tenant">
+			AND d.tenant = #{tenant,jdbcType=INTEGER}
+		</if>
+        <if test="shopCode != null and ''!= shopCode">
+            AND d.btit_d_code = #{shopCode,jdbcType=VARCHAR}
+        </if>
+		<if test="status != null and ''!= status">
+			AND e.status = #{status,jdbcType=INTEGER}
+		</if>
+		ORDER BY e.create_time DESC
+	</select>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap">
+		SELECT id, d_id,  e_id, setting, create_time,server_name,server_config,server_code,description,param,is_drag,install_status,install_the_image_id,use_type
+		FROM department_device WHERE del_flag=0 AND id = #{id,jdbcType=INTEGER}
+	</select>
+    <!--根据门店id查询设备-->
+    <select id="selectByDepartmentId" resultMap="BaseResultMap">
+		SELECT id, d_id,  e_id, setting, create_time,server_name,server_code,description,param,is_drag,install_the_image,coverage_area_image,install_status
+		FROM department_device WHERE del_flag=0 AND d_id = #{dId,jdbcType=INTEGER}
+	</select>
+	<!--根据设备id查询配置单-->
+	<select id="selectByeIds" resultMap="BaseResultMap">
+		SELECT id, d_id, e_id, setting, create_time,server_name,server_code,description,param,is_drag
+		FROM department_device
+		WHERE del_flag=0 AND e_id in
+		<foreach collection="eIds" item = "item" index="index" open="(" close=")" separator=",">
+			#{item,jdbcType=INTEGER}
+		</foreach>
+	</select>
+	<!--根据设备id查询配置单-->
+	<select id="selectBydId" resultMap="BaseResultMap">
+		SELECT id, d_id, e_id, setting, create_time,server_name,server_code,description,param,is_drag,del_flag
+		FROM department_device
+		WHERE d_id = #{departmentId,jdbcType=INTEGER}  ORDER BY create_time DESC
+	</select>
+	<!--查询所有设备之摄像头-->
+	<select id="selectEdgeDeviceForCamera" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice">
+        SELECT d.id, d.d_id AS dId, d.e_id AS eId, d.setting, d.create_time AS createTime,d.server_name AS serverName,d.server_code AS serverCode,d.description,d.param,d.is_drag AS isDrag,d.install_the_image AS installTheImage
+		FROM department_device d LEFT JOIN edge_device e
+		ON e.type_id = 51 WHERE d.is_drag = 0
+	</select>
+	<!--回显店铺配置单详情-->
+    <select id="getDepartmentEdgeDevicedetail"  parameterType="java.lang.Integer" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice">
+		SELECT d.id, d.d_id AS dId, d.e_id AS eId, d.is_drag AS isDrag,d.setting,d.create_time AS createTime,d.update_time AS updateTime,d.status,d.server_name AS serverName,d.config_name AS configName,d.server_code AS serverCode,d.description,d.param,d.json_config AS jsonConfig,
+		 e.`name` AS source,e.type AS eType,e.thumbnail_name AS thumbnailName,e.thumbnail,e.os_code,d.del_flag AS delFlag,d.use_type AS useTy,d.install_status AS installStatus,e.os_code AS osCode
+		FROM department_device d
+		INNER JOIN edge_device e ON d.e_id = e.id
+		WHERE
+		<if test="null != departmentId and '' != departmentId">
+			d.d_id = #{departmentId,jdbcType=INTEGER}
+		</if>
+		AND d.del_flag=0
+	</select>
+	<!--查找edgeServer-->
+	<select id="selectDeviceByDepartmentId" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceForBtit">
+       SELECT e.id, e.setting,e.d_id AS dId,e.e_id AS eId, e.create_time AS createTime,e.del_flag AS delFlag,e.install_the_image AS installTheImage,e.coverage_area_image AS coverageAreaImage,
+       e.install_status AS installStatus,e.install_the_image_id AS installTheImageId,e.server_name AS deviceName,e.config_name AS configName, e.server_code AS deviceCode, e.description,
+       e.json_config AS jsonConfig, e.`status`, e.use_type AS type
+	   FROM department_device e LEFT JOIN edge_device ed ON e.e_id = ed.id
+       WHERE e.del_flag=0 AND ed.type = #{type,jdbcType=VARCHAR} AND e.d_id = #{departmentId,jdbcType=INTEGER}
+	</select>
+	<!--查询所有摄像头的安装状态-->
+	<select id="getAllCameraInstallStatus" resultType="com.lenovo.ailab.smartedge.dao.vo.CameraInstallStatusVo">
+       SELECT d.id AS id,d.install_status AS installStatus
+       FROM department_device d,edge_device_hardware e,hardware h
+       WHERE d.e_id = e.e_id AND e.h_id = h.id AND h.end_type_id = 51 AND d.d_id = #{departmentId,jdbcType=INTEGER}
+	</select>
+	<!--校对安装图片-->
+	<update id="updateCameraInstallStatus">
+		UPDATE department_device
+		SET install_status = #{status,jdbcType=INTEGER}
+		WHERE id = #{deviceId,jdbcType=INTEGER}
+	</update>
+	<!--查询门店最新部署文件-->
+	<select id="getDeploymentFile" resultType="com.lenovo.ailab.smartedge.dao.po.HardwareDeploymentFile">
+        SELECT id,d_id AS dId,version,deployment_file_name AS deploymentFileName,deployment_file_path AS deploymentFilePath,create_time AS createTime
+        FROM hardware_deployment_files
+        WHERE d_id = #{departmentId,jdbcType=INTEGER} ORDER BY create_time DESC
+	</select>
+    <!--获取摄像头用途-->
+    <select id="selectCameraDepartmentById" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDeviceForUseType">
+        SELECT d.id AS id,d.use_type AS useType
+        FROM department_device d,edge_device_hardware e,hardware h
+        WHERE d.e_id = e.e_id AND e.h_id = h.id AND h.end_type_id = 51 AND d.d_id = #{departmentId,jdbcType=INTEGER}
+    </select>
+	<!--获取摄像头用途byCode-->
+	<select id="selectCameraDepartmentByCode" resultType="com.lenovo.ailab.smartedge.dao.po.Department">
+        select id,btit_d_code AS btitdCode,name,address,create_time AS createTime from department WHERE btit_d_code =#{btitdCode,jdbcType=VARCHAR}
+    </select>
+    <!--批量更新摄像头的用途类型-->
+    <update id="updateDeviceUseType">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE department_device
+            SET
+            use_type = #{item.useType,jdbcType=INTEGER},
+			install_the_image = null,
+			coverage_area_image = null,
+			install_the_image_id = null,
+			install_status = 0,
+            update_time = NOW()
+            WHERE id = #{item.id,jdbcType=INTEGER}
+        </foreach>
+    </update>
+	<!--查找edgeServer ip-->
+	<select id="selectEdgeServerByDepartmentId" resultType="com.lenovo.ailab.smartedge.dao.po.DepartmentDevice">
+	   SELECT id,json_config AS jsonConfig,server_code AS serverCode FROM department_device WHERE id = (
+	   		SELECT t.from_device_id
+			FROM department_device_topology t
+			WHERE t.d_id = #{departmentId,jdbcType=INTEGER}
+			AND (t.from_device_id = #{deviceId,jdbcType=INTEGER} OR t.to_device_id = #{deviceId,jdbcType=INTEGER}) AND t.del_flag = 0)
+	</select>
+
+	<!--根据software查询门店和设备-->
+	<select id="selectDepartmentBySoftware" resultType="com.lenovo.ailab.smartedge.dao.po.UpdateDeviceConfig">
+		SELECT s.id AS id,s.s_code AS code, s.file_name AS fileName,s.file_path AS filePath,s.name, ed.id AS edgeDeviceId, ed.server_name AS edgeDeviceName,ed.d_id AS dId FROM software s ,edge_device_software e,department_device ed
+		WHERE e.e_id = ed.e_id AND s.id = e.s_id
+        AND s.del_flag = '0' AND ed.del_flag = '0' AND e.del_flag = '0' AND s.id = #{sId,jdbcType=INTEGER}
+	</select>
+
+	<!--获取进店摄像头的数据-->
+	<select id="selectByDepartmentIdAndDeviceId" resultMap="BaseResultMap">
+		SELECT id, d_id,  e_id, setting, create_time,server_name,server_code,description,param,is_drag,install_the_image,coverage_area_image,install_status
+		FROM department_device WHERE id in(
+	    	SELECT t.to_device_id
+			FROM department_device_topology t
+			WHERE t.d_id = #{storeId,jdbcType=INTEGER}
+			AND (t.from_device_id = #{deviceId,jdbcType=INTEGER}) AND t.del_flag = 0)
+		AND use_type = 1
+	</select>
+
+    <!--根据tx2id 查找关联摄像头-->
+    <select id="selectDeviceByEdgeServerId" resultMap="BaseResultMap">
+        SELECT id, d_id,  e_id, setting, create_time,server_name,server_code,description,param,is_drag,install_the_image,coverage_area_image,install_status
+        FROM department_device WHERE id in
+            (SELECT t.to_device_id
+			 FROM department_device_topology t
+			 WHERE t.d_id = #{storeId,jdbcType=INTEGER}
+			 AND t.from_device_id = #{deviceId,jdbcType=INTEGER} AND t.del_flag = 0)
+    </select>
+	<!--根据id查询门店btitcode以及edgeServerCode-->
+	<select id="selectCodeByDepartmentIdAndDeviceId" resultMap="BaseResultMap">
+		SELECT de.id, de.server_code,d.id,d.btit_d_code
+		FROM department_device de LEFT JOIN department d
+		ON d.id = de.d_id WHERE de.id = #{deviceId,jdbcType=INTEGER} AND d.id =#{storeId,jdbcType=INTEGER}
+	</select>
+	<!--更新tx2配置-->
+	<update id="updateDeviceConfig">
+		UPDATE department_device SET server_config =#{agentConfig,jdbcType=VARCHAR} WHERE id = #{deviceId,jdbcType=INTEGER}
+	</update>
+	<!--更新tx2配置-->
+	<update id="updateDeviceConfigByCode">
+		UPDATE department_device SET server_config =#{agentConfig,jdbcType=VARCHAR} WHERE server_code = #{deviceCode,jdbcType=VARCHAR}
+	</update>
+	<!--根据code查询设备详情-->
+	<select id="selectByCode" resultMap="BaseResultMap">
+		SELECT id, d_id,  e_id, setting, create_time,server_name,server_config,server_code,description,param,is_drag,install_status,install_the_image_id,use_type
+		FROM department_device WHERE del_flag=0 AND server_code = #{deviceCode,jdbcType=VARCHAR}
+	</select>
+    <!--更新摄像头已被模型使用-->
+   <!-- <update id="updateDeviceIsConfig">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE department_device
+            SET
+            is_config = 1,
+            update_time = NOW()
+            WHERE id = #{item,jdbcType=INTEGER}
+        </foreach>
+    </update>-->
+</mapper>

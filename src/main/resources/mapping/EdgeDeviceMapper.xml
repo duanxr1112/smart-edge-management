@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lenovo.ailab.smartedge.dao.EdgeDeviceMapper">
+  <resultMap id="BaseResultMap" type="com.lenovo.ailab.smartedge.dao.po.EdgeDevice">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="e_code" jdbcType="VARCHAR" property="eCode" />
+    <result column="type" jdbcType="VARCHAR" property="type" />
+    <result column="type_id" jdbcType="VARCHAR" property="typeId" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="os_code" jdbcType="VARCHAR" property="osCode" />
+    <result column="os_version" jdbcType="VARCHAR" property="osVersion" />
+    <result column="osName" jdbcType="VARCHAR" property="osName" />
+    <result column="osType" jdbcType="VARCHAR" property="osType" />
+    <result column="thumbnail_name" jdbcType="VARCHAR" property="thumbnailName" />
+    <result column="thumbnail" jdbcType="VARCHAR" property="thumbnail" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="del_flag" jdbcType="BIT" property="delFlag" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    UPDATE edge_device SET del_flag=1
+    WHERE id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDevice" useGeneratedKeys="true"  keyProperty="id">
+    INSERT INTO edge_device (id, e_code, type, name, os_code, os_version,create_time, del_flag,thumbnail,thumbnail_name,type_id)
+    VALUES (#{id,jdbcType=INTEGER}, #{eCode,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{osCode,jdbcType=VARCHAR},
+            #{osVersion,jdbcType=VARCHAR},NOW(),0,#{thumbnail,jdbcType=VARCHAR},#{thumbnailName,jdbcType=VARCHAR},#{typeId,jdbcType=INTEGER})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.lenovo.ailab.smartedge.dao.po.EdgeDevice">
+    UPDATE edge_device
+      SET e_code = #{eCode,jdbcType=VARCHAR},
+      type = #{type,jdbcType=VARCHAR},
+      name = #{name,jdbcType=VARCHAR},
+      os_code = #{osCode,jdbcType=VARCHAR},
+      os_version = #{osVersion,jdbcType=VARCHAR},
+      create_time = NOW(),
+      del_flag = 0,
+      thumbnail = #{thumbnail,jdbcType=VARCHAR},
+      thumbnail_name = #{thumbnailName,jdbcType=VARCHAR}
+    WHERE id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code, e.os_version,e.create_time, e.del_flag,e.thumbnail,e.thumbnail_name,e.type_id,
+    o.id AS osId,o.`name`AS osName,o.type AS osType,o.parameter AS osParameter
+    FROM edge_device e
+    LEFT JOIN operating_system o ON e.os_code=o.os_code
+    WHERE e.id = #{id,jdbcType=INTEGER} AND e.del_flag=0
+  </select>
+  <!--根据ids查询-->
+  <select id="selectByPrimaryKeys" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code, e.os_version,e.create_time, e.del_flag,e.thumbnail,e.thumbnail_name
+    FROM edge_device e
+    WHERE e.id in
+    <foreach collection="ids" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND e.del_flag=0
+  </select>
+  <!-- 根据ids获取配置-->
+  <select id="selectAllByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code, e.os_version,e.create_time, e.del_flag,e.thumbnail,e.thumbnail_name,
+    o.id AS osId,o.`name`AS osName,o.type AS osType,o.parameter AS osParameter
+    FROM edge_device e
+    LEFT JOIN operating_system o ON e.os_code=o.os_code
+    WHERE e.id in
+    <foreach collection="ids" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=INTEGER}
+    </foreach>
+    AND e.del_flag=0
+  </select>
+  <select id="selectAlledge" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code,e.os_version, e.create_time, e.del_flag,d.is_drag
+    FROM edge_device e LEFT JOIN department_device d ON e.id=d.e_id
+    WHERE e.del_flag=0
+    <if test="type != null and '' != type">
+      AND e.type = #{type,jdbcType=VARCHAR}
+    </if>
+    GROUP BY e.id
+  </select>
+  
+  <select id="selectAllByType" parameterType="java.lang.String" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code, e.os_version,e.create_time, e.del_flag,e.thumbnail_name,e.thumbnail,o.`name`AS osName,o.type AS osType
+    FROM edge_device e
+    LEFT JOIN operating_system o ON e.os_code=o.os_code
+    WHERE e.del_flag=0 AND e.type = #{type,jdbcType=CHAR}
+    <if test="name != '' and name != null">
+      AND e.name LIKE concat('%',#{name},'%')
+    </if>
+    ORDER BY e.create_time DESC
+  </select>
+  <!--查找缩略图-->
+  <select id="downloadthumbnail" resultType="com.lenovo.ailab.smartedge.dao.po.EdgeDevice">
+    SELECT id, e_code, type, name, os_code,os_version, create_time, del_flag,thumbnail
+    FROM edge_device
+    WHERE thumbnail = #{path,jdbcType=VARCHAR}
+  </select>
+  <!--根据oIds查找配置单-->
+  <select id="selectEdgeDeviceByOIds" resultMap="BaseResultMap">
+    SELECT id, e_code, type, name, os_code, os_version, create_time, del_flag,thumbnail
+    FROM edge_device
+    WHERE os_code in
+    <foreach collection="oScodes" item = "item" index="index" open="(" close=")" separator=",">
+      #{item,jdbcType=VARCHAR}
+    </foreach>
+     AND del_flag=0
+  </select>
+  <!--根据type 查找type_id-->
+  <select id="selectEdgeDeviceByType" resultMap="BaseResultMap">
+    SELECT e.id, e.e_code, e.type, e.name, e.os_code, e.os_version,e.create_time, e.del_flag,e.thumbnail,e.thumbnail_name,type_id
+    FROM edge_device e
+    WHERE e.type = #{type,jdbcType=VARCHAR} ORDER BY create_time DESC
+  </select>
+</mapper>
